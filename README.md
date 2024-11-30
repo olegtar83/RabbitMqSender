@@ -8,7 +8,7 @@
      - Container sender-db                    Healthy                                                                 64.6s
      - Container sender-api                   Started                                                                 65.1s
     ```
-4. Открываем `http://localhost:7888/swagger` и запускаем единственный метод `/sendPayment`, передаем json как параметр
+4. Открываем `http://localhost:7889/swagger` и запускаем единственный метод `/sendPayment`, передаем json как параметр
     ```
     {
     	"request": {
