@@ -47,6 +47,7 @@ services:
       AllowedHosts: "*"
       DatabaseSettings:ConnStr: "Host=sender-db;Port=5432;Username=dbuser;Password=dbpassword;Database=senderdb;Pooling=true;"
       RabbitMqSettings:Host: "rabbitmq"
+      XmlUrl: "https://somesite/api/v1/invoice"
       Logs:Host : "http://seq:5341"
     ports:
       - 7889:80

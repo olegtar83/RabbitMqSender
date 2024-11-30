@@ -38,7 +38,7 @@ namespace RabbitMqSender
 
             services.AddHttpClient("InvoiceClient", client =>
             {
-                client.BaseAddress = new Uri("https://somesite/api/v1/invoice");
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("XmlUrl")!);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
             });
