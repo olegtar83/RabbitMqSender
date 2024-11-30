@@ -56,4 +56,4 @@
     SELECT p."ReceivedAt", p."JsonMessage", ps."Status" FROM "Payments" as p
     inner join "PaymentStatus" as ps on p."PaymentStatusId" = ps."Id";
     ```
-8. Если результат не вывелся то надо подождать, возможно httpClient не успел вернуть ошибку, нужно попытаться снова через пол минуты.
+8. Если результат не вывелся то надо подождать, возможно httpClient не успел вернуть ошибку и записать в бд, нужно попытаться снова через пол минуты.
