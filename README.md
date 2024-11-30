@@ -46,11 +46,11 @@
     ```
     и получаем статус 200 в ответ.
 5. Тем временем можно посмотреть происходящие в логах `http://localhost:8020/` и увидеть ошибку обращения к несуществующему адресу `https://somesite/api/v1/invoice` а так же посмотреть на передаваемый xml и запись json в бд.
-6. Затем зайти в
+6. Затем зайти в psql
    ```
    docker exec -it sender-db psql -U dbuser -d senderdb
    ```
-    и посмотреть на количество запросов сохраненных в бд 
+   и посмотреть на количество запросов сохраненных в бд 
     ```
     SELECT p."ReceivedAt", p."JsonMessage", ps."Status" FROM "Payments" as p
     inner join "PaymentStatus" as ps on p."PaymentStatusId" = ps."Id";
