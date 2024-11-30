@@ -1,6 +1,6 @@
 # RabbitMqSender. Инструкция по запуску
 1. Перейти в папку `cd RabbitMqSender` и запустить команду `docker-compose up -d`. 
-2. Ждем пока все рэббит, постгрес и сервис логирования запустятся и бд смигрируется
+2. Ждем пока рэббит, постгрес и сервис логирования запустятся и бд смигрируется
     ```
      - Network rabbitmqsender_sender-network  Created                                                                  0.1s
      - Container rabbitmq                     Healthy                                                                 37.2s
