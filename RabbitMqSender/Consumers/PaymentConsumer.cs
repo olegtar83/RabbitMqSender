@@ -5,10 +5,8 @@ using RabbitMqSender.DataClasses;
 using RabbitMqSender.DataClasses.Entities;
 using RabbitMqSender.DataClasses.Enums;
 using RabbitMqSender.Extensions;
-using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Serialization;
 
 namespace RabbitMqSender.Consumers
 {
@@ -85,17 +83,7 @@ namespace RabbitMqSender.Consumers
                 Pack = paymentRequest.Attributes?.Attribute.Find(attr => attr.Code == "pack")?.Attribute ?? string.Empty,
             };
 
-            var serializer = new XmlSerializer(typeof(InvoicePayment));
-            string xmlString;
-            using (var stringWriter = new StringWriter())
-            {
-                using (var xmlWriter = System.Xml.XmlWriter.Create(stringWriter))
-                {
-                    serializer.Serialize(xmlWriter, invoicePayment);
-                    xmlString = stringWriter.ToString();
-                }
-            }
-            return xmlString;
+            return invoicePayment.SeriallizeToXml<InvoicePayment>();
         }
     }
 }
