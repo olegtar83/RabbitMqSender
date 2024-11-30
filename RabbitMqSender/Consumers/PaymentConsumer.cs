@@ -27,13 +27,13 @@ namespace RabbitMqSender.Consumers
         public async Task Consume(ConsumeContext<PaymentRequest> context)
         {
             var statuses = await _dbContext.PaymentStatus.ToListAsync();
+            var statusDictionary = statuses.ToDictionary(x => x.Status, x => x);
 
             var payment = new Payment()
             {
                 JsonMessage = JsonSerializer.Serialize(context.Message),
                 ReceivedAt = DateTime.UtcNow,
-                PaymentStatus = statuses.First(x =>
-                    x.Status == Status.Received.GetDescription())
+                PaymentStatus = statusDictionary!.GetValueOrDefault(Status.Received.GetDescription(), null)!
             };
 
             _logger.LogInformation($"Received {JsonSerializer.Serialize(context.Message)}");
@@ -48,21 +48,13 @@ namespace RabbitMqSender.Consumers
 
                 var response = await _client.PostAsync("", httpContent);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    payment.PaymentStatus = statuses.First(x =>
-                        x.Status == Status.Sent.GetDescription());
-                }
-                else
-                {
-                    payment.PaymentStatus = statuses.First(x =>
-                       x.Status == Status.Error.GetDescription());
-                }
+                payment.PaymentStatus = response.IsSuccessStatusCode
+                 ? statusDictionary!.GetValueOrDefault(Status.Sent.GetDescription(), null)!
+                 : statusDictionary!.GetValueOrDefault(Status.Error.GetDescription(), null)!;
             }
             catch (HttpRequestException httpEx)
             {
-                payment.PaymentStatus = statuses.First(x =>
-                        x.Status == Status.Error.GetDescription());
+                payment.PaymentStatus = statusDictionary!.GetValueOrDefault(Status.Error.GetDescription(), null)!;
                 _logger.LogError($"Invalid Url for data sending{Environment.NewLine}{httpEx.Message}");
             }
             await _dbContext.Payments.AddAsync(payment);
