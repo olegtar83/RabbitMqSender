@@ -51,12 +51,12 @@ namespace RabbitMqSender.Consumers
                 if (response.IsSuccessStatusCode)
                 {
                     payment.PaymentStatus = statuses.First(x =>
-                        x.Status == Status.Error.GetDescription());
+                        x.Status == Status.Sent.GetDescription());
                 }
                 else
                 {
                     payment.PaymentStatus = statuses.First(x =>
-                       x.Status == Status.Sent.GetDescription());
+                       x.Status == Status.Error.GetDescription());
                 }
             }
             catch (HttpRequestException httpEx)
