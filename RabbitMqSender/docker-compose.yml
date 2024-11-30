@@ -1,0 +1,79 @@
+﻿version: "3.9"
+
+services:
+  sender-db:
+    image: postgres:14
+    container_name: sender-db
+    environment:
+      POSTGRES_DB: "senderdb"
+      POSTGRES_USER: "dbuser"
+      POSTGRES_PASSWORD: "dbpassword"
+    mem_limit: 512m
+    ports:
+      - 5432:5432
+    volumes:
+      - ./volumes/Database/data:/var/lib/postgresql/data
+      - ./volumes/Database/backups:/backups
+    networks:
+      - sender-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d senderdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  rabbitmq:
+    container_name: "rabbitmq"
+    image: rabbitmq:management
+    hostname: "rabbitmq"
+    ports:
+        - '5672:5672'
+        - '15672:15672'
+    networks:
+      - sender-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  sender-api:
+    image: sender-api-image
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    container_name: sender-api
+    restart: always
+    environment:
+      ASPNETCORE_URLS: "http://+:80"
+      AllowedHosts: "*"
+      DatabaseSettings:ConnStr: "Host=sender-db;Port=5432;Username=dbuser;Password=dbpassword;Database=senderdb;Pooling=true;"
+      RabbitMqSettings:Host: "rabbitmq"
+      Logs:Host : "http://seq:5341"
+    ports:
+      - 7889:80
+    mem_limit: 1024m
+    entrypoint: dotnet RabbitMqSender.dll
+    depends_on:
+       sender-db:
+          condition: service_healthy
+       rabbitmq:
+          condition: service_healthy
+       seq:
+          condition: service_started
+    networks:
+      - sender-network
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "8020:80"
+      - "5341:5341"
+    volumes:
+      - ./seq-logs:/data
+    networks:
+      - sender-network
+networks:
+  sender-network:
+    driver: bridge
