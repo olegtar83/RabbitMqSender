@@ -33,7 +33,7 @@ namespace RabbitMqSender.Consumers
             {
                 JsonMessage = JsonSerializer.Serialize(context.Message),
                 ReceivedAt = DateTime.UtcNow,
-                PaymentStatus = statusDictionary!.GetValueOrDefault(Status.Received.GetDescription(), null)!
+                PaymentStatus = statusDictionary!.GetValue(Status.Received.GetDescription())!
             };
 
             _logger.LogInformation($"Received {JsonSerializer.Serialize(context.Message)}");
@@ -49,12 +49,12 @@ namespace RabbitMqSender.Consumers
                 var response = await _client.PostAsync("", httpContent);
 
                 payment.PaymentStatus = response.IsSuccessStatusCode
-                 ? statusDictionary!.GetValueOrDefault(Status.Sent.GetDescription(), null)!
-                 : statusDictionary!.GetValueOrDefault(Status.Error.GetDescription(), null)!;
+                 ? statusDictionary!.GetValue(Status.Sent.GetDescription())!
+                 : statusDictionary!.GetValue(Status.Error.GetDescription())!;
             }
             catch (HttpRequestException httpEx)
             {
-                payment.PaymentStatus = statusDictionary!.GetValueOrDefault(Status.Error.GetDescription(), null)!;
+                payment.PaymentStatus = statusDictionary!.GetValue(Status.Error.GetDescription())!;
                 _logger.LogError($"Invalid Url for data sending{Environment.NewLine}{httpEx.Message}");
             }
             await _dbContext.Payments.AddAsync(payment);
