@@ -36,6 +36,9 @@ namespace RabbitMqSender.Consumers
                 PaymentStatus = statusDictionary!.GetValue(Status.Received.GetDescription())!
             };
 
+            await _dbContext.Payments.AddAsync(payment);
+            await _dbContext.SaveChangesAsync();
+
             _logger.LogInformation($"Received {JsonSerializer.Serialize(context.Message)}");
 
             var xmlString = ConvertToXml(context.Message);
@@ -57,7 +60,6 @@ namespace RabbitMqSender.Consumers
                 payment.PaymentStatus = statusDictionary!.GetValue(Status.Error.GetDescription())!;
                 _logger.LogError($"Invalid Url for data sending{Environment.NewLine}{httpEx.Message}");
             }
-            await _dbContext.Payments.AddAsync(payment);
             await _dbContext.SaveChangesAsync();
         }
 
