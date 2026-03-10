@@ -2,7 +2,7 @@
 
 namespace RabbitMqSender.DataClasses.Enums
 {
-    public enum Status
+    public enum Status: byte
     {
         [Description("Получен")]
         Received = 1,
