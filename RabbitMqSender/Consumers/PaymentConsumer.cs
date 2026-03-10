@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace RabbitMqSender.Consumers
 {
-    public class PaymentConsumer(
+    public sealed class PaymentConsumer(
         IApplicationDbContext dbContext,
         ILogger<PaymentConsumer> logger,
         IHttpClientFactory httpClientFactory) : IConsumer<PaymentRequest>
