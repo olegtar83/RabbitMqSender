@@ -29,26 +29,22 @@ namespace RabbitMqSender.Consumers
 
         public async Task Consume(ConsumeContext<PaymentRequest> context)
         {
-            byte[]? jsonBytes = null;
-            byte[]? rentedBuffer = null;
-            try
+            var receivedStatus = _statuses[Status.Received.GetDescription()];
+            var sentStatus = _statuses[Status.Sent.GetDescription()];
+            var errorStatus = _statuses[Status.Error.GetDescription()];
+
+            var bufferWriter = new ArrayBufferWriter<byte>(1024);
+            using (var utf8JsonWriter = new Utf8JsonWriter(bufferWriter))
             {
-                rentedBuffer = ArrayPool<byte>.Shared.Rent(1024);
-                using var utf8JsonWriter = new Utf8JsonWriter(new MemoryStream(rentedBuffer));
                 JsonSerializer.Serialize(utf8JsonWriter, context.Message, _jsonOptions);
-                jsonBytes = rentedBuffer.AsSpan(0, (int)utf8JsonWriter.BytesCommitted).ToArray();
             }
-            finally
-            {
-                if (rentedBuffer != null)
-                    ArrayPool<byte>.Shared.Return(rentedBuffer);
-            }
+            var jsonMessage = Encoding.UTF8.GetString(bufferWriter.WrittenSpan);
 
             var payment = new Payment()
             {
-                JsonMessage = Encoding.UTF8.GetString(jsonBytes),
+                JsonMessage = jsonMessage,
                 ReceivedAt = DateTime.UtcNow,
-                PaymentStatus = _statuses![Status.Received.GetDescription()]!
+                PaymentStatus = receivedStatus
             };
 
             await _dbContext.Payments.AddAsync(payment, context.CancellationToken);
@@ -61,12 +57,12 @@ namespace RabbitMqSender.Consumers
                 var response = await _client.PostAsync("", httpContent);
 
                 payment.PaymentStatus = response.IsSuccessStatusCode
-                    ? _statuses![Status.Sent.GetDescription()]!
-                    : _statuses![Status.Error.GetDescription()]!;
+                    ? sentStatus
+                    : errorStatus;
             }
             catch (HttpRequestException httpEx)
             {
-                payment.PaymentStatus = _statuses![Status.Error.GetDescription()]!;
+                payment.PaymentStatus = errorStatus;
                 _logger.LogError(httpEx, "Failed to send payment");
             }
 
@@ -80,10 +76,10 @@ namespace RabbitMqSender.Consumers
             {
                 sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 sb.Append("<InvoicePayment>");
-                AppendFormattedValue(sb, paymentRequest.Request.Id, "Id");
+                sb.AppendFormattedValue(paymentRequest.Request.Id, "Id");
                 sb.Append("<Debit>").Append(paymentRequest.DebitPart.AccountNumber).Append("</Debit>");
                 sb.Append("<Credit>").Append(paymentRequest.CreditPart.AccountNumber).Append("</Credit>");
-                AppendFormattedValue(sb, paymentRequest.DebitPart.Amount, "Amount");
+                sb.AppendFormattedValue(paymentRequest.DebitPart.Amount, "Amount");
                 sb.Append("<Currency>").Append(paymentRequest.DebitPart.Currency).Append("</Currency>");
                 sb.Append("<Details>").Append(paymentRequest.Details).Append("</Details>");
 
@@ -99,32 +95,14 @@ namespace RabbitMqSender.Consumers
             }
         }
 
-    private static void AppendFormattedValue<T>(StringBuilder sb, T value, string elementName)
-        where T : ISpanFormattable
+        public class StringBuilderPooledObjectPolicy : IPooledObjectPolicy<StringBuilder>
         {
-            sb.Append('<').Append(elementName).Append('>');
-
-            Span<char> buffer = stackalloc char[64];
-            if (value.TryFormat(buffer, out int charsWritten, default, null))
+            public StringBuilder Create() => new(256);
+            public bool Return(StringBuilder obj)
             {
-                sb.Append(buffer[..charsWritten]);
+                obj.Clear();
+                return true;
             }
-            else
-            {
-                sb.Append(value.ToString());
-            }
-
-            sb.Append('<').Append('/').Append(elementName).Append('>');
-        }
-    }
-
-    public class StringBuilderPooledObjectPolicy : IPooledObjectPolicy<StringBuilder>
-    {
-        public StringBuilder Create() => new(256);
-        public bool Return(StringBuilder obj)
-        {
-            obj.Clear();
-            return true;
         }
     }
 }
