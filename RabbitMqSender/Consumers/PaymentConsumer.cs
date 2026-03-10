@@ -48,6 +48,7 @@ namespace RabbitMqSender.Consumers
             };
 
             await _dbContext.Payments.AddAsync(payment, context.CancellationToken);
+            await _dbContext.SaveChangesAsync(context.CancellationToken);
 
             var xmlString = BuildXml(context.Message);
 
