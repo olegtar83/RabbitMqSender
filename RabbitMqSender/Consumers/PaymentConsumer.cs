@@ -78,8 +78,6 @@ namespace RabbitMqSender.Consumers
             var sb = _pool.Get();
             try
             {
-                sb.Clear();
-
                 sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 sb.Append("<InvoicePayment>");
                 AppendFormattedValue(sb, paymentRequest.Request.Id, "Id");
@@ -91,7 +89,6 @@ namespace RabbitMqSender.Consumers
 
                 var pack = paymentRequest.Attributes?.Attribute.Find(attr => attr.Code == "pack")?.Attribute ?? "";
                 sb.Append("<Pack>").Append(pack).Append("</Pack>");
-
                 sb.Append("</InvoicePayment>");
 
                 return sb.ToString();
